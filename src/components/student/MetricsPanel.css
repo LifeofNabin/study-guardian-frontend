@@ -1,0 +1,513 @@
+/**
+ * FILE PATH: frontend/src/components/student/MetricsPanel.css
+ * ✅ IMPROVED: Better visibility and modern design for session dashboard
+ */
+
+.metrics-panel {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #fff;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Custom Scrollbar */
+.metrics-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.metrics-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.metrics-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.metrics-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============= HEADER ============= */
+.metrics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.metrics-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+}
+
+.header-icon {
+  width: 20px;
+  height: 20px;
+  color: #3b82f6;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.processing {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.idle {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse-animation 2s ease-in-out infinite;
+}
+
+@keyframes pulse-animation {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* ============= PLACEHOLDER ============= */
+.metrics-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.placeholder-icon {
+  width: 64px;
+  height: 64px;
+  opacity: 0.3;
+}
+
+.metrics-placeholder p {
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ============= METRICS GRID ============= */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* ============= METRIC CARD ============= */
+.metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.metric-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.metric-card:hover::before {
+  opacity: 1;
+}
+
+/* Status Colors */
+.metric-card.success {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.metric-card.success::before {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.metric-card.warning {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.metric-card.warning::before {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.metric-card.danger {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.metric-card.danger::before {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.metric-card.neutral {
+  border-color: rgba(156, 163, 175, 0.3);
+}
+
+/* ============= METRIC HEADER ============= */
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metric-icon {
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+}
+
+.metric-card.success .metric-icon {
+  color: #10b981;
+}
+
+.metric-card.warning .metric-icon {
+  color: #f59e0b;
+}
+
+.metric-card.danger .metric-icon {
+  color: #ef4444;
+}
+
+.metric-label {
+  flex: 1;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.trend-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.trend-icon.up {
+  color: #10b981;
+}
+
+.trend-icon.down {
+  color: #ef4444;
+}
+
+.trend-icon.stable {
+  color: #9ca3af;
+}
+
+/* ============= METRIC VALUE ============= */
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  transition: all 0.5s ease; /* ✅ ADDED: Smooth value transitions */
+}
+
+.metric-unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 2px;
+}
+
+/* ============= METRIC CHART ============= */
+.metric-chart {
+  margin-top: 4px;
+  height: 30px;
+}
+
+.mini-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============= PROGRESS RING ============= */
+.metrics-progress {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.metrics-progress h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.progress-ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.progress-max {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============= DETAILS SECTION ============= */
+.metrics-details {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.metrics-details h4 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.detail-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.detail-item span:first-child {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.detail-item span:last-child {
+  color: #fff;
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* ============= STATUS ICONS ============= */
+.status-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.status-icon.success {
+  color: #10b981;
+}
+
+.status-icon.danger {
+  color: #ef4444;
+}
+
+/* ============= RESPONSIVE ============= */
+@media (max-width: 1024px) {
+  .metrics-panel {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .metrics-grid {
+    gap: 10px;
+  }
+
+  .metric-card {
+    padding: 12px;
+  }
+
+  .metric-value {
+    font-size: 24px;
+  }
+
+  .metrics-progress {
+    padding: 16px;
+  }
+
+  .progress-value {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-panel {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .metrics-header h3 {
+    font-size: 16px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .metric-card {
+    padding: 10px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+  }
+
+  .metrics-progress {
+    padding: 12px;
+  }
+
+  .progress-value {
+    font-size: 24px;
+  }
+}
+
+/* ============= ANIMATIONS ============= */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.metric-card {
+  animation: slideInUp 0.4s ease-out backwards;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0.05s; }
+.metric-card:nth-child(2) { animation-delay: 0.1s; }
+.metric-card:nth-child(3) { animation-delay: 0.15s; }
+.metric-card:nth-child(4) { animation-delay: 0.2s; }
+.metric-card:nth-child(5) { animation-delay: 0.25s; }
+.metric-card:nth-child(6) { animation-delay: 0.3s; }
+.metric-card:nth-child(7) { animation-delay: 0.35s; }
+
+/* ============= GLOW EFFECTS ============= */
+.metric-card.success {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+.metric-card.warning {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+}
+
+.metric-card.danger {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+.metric-card.success:hover {
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+}
+
+.metric-card.warning:hover {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+}
+
+.metric-card.danger:hover {
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);
+}

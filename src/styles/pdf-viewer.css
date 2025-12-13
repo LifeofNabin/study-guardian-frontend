@@ -1,0 +1,506 @@
+/* PDF Viewer Styles */
+
+/* Container */
+.pdf-viewer-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+  position: relative;
+}
+
+/* PDF Canvas */
+.pdf-canvas-wrapper {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #525659;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.pdf-canvas {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: white;
+  cursor: text;
+  user-select: text;
+}
+
+/* Dark Mode */
+.pdf-viewer-container.dark-mode .pdf-canvas-wrapper {
+  background: #1a1a1a;
+}
+
+.pdf-viewer-container.dark-mode .pdf-canvas {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+/* Sepia Mode */
+.pdf-viewer-container.sepia-mode .pdf-canvas-wrapper {
+  background: #f4ecd8;
+}
+
+.pdf-viewer-container.sepia-mode .pdf-canvas {
+  filter: sepia(0.3);
+}
+
+/* Highlight Layer */
+.highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.highlight {
+  position: absolute;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  pointer-events: all;
+  border-radius: 2px;
+}
+
+.highlight:hover {
+  opacity: 0.6;
+}
+
+.highlight.selected {
+  opacity: 0.7;
+  outline: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+/* Highlight Colors */
+.highlight-yellow {
+  background-color: #ffff00;
+}
+
+.highlight-green {
+  background-color: #00ff00;
+}
+
+.highlight-blue {
+  background-color: #00bfff;
+}
+
+.highlight-pink {
+  background-color: #ff69b4;
+}
+
+.highlight-orange {
+  background-color: #ffa500;
+}
+
+.highlight-purple {
+  background-color: #9b59b6;
+}
+
+.highlight-red {
+  background-color: #ff6b6b;
+}
+
+/* Annotation Markers */
+.annotation-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.annotation-marker {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ffd700;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: all;
+  transition: transform 0.2s;
+  font-size: 16px;
+}
+
+.annotation-marker:hover {
+  transform: scale(1.2);
+}
+
+.annotation-marker.note {
+  background: #ffd700;
+}
+
+.annotation-marker.question {
+  background: #ff6b6b;
+}
+
+.annotation-marker.important {
+  background: #ff9500;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 149, 0, 0);
+  }
+}
+
+/* Text Selection */
+::selection {
+  background: rgba(255, 255, 0, 0.3);
+}
+
+.pdf-canvas::selection {
+  background: rgba(255, 255, 0, 0.3);
+}
+
+/* Toolbar */
+.pdf-toolbar {
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
+
+.pdf-toolbar.dark-mode {
+  background: #2d2d2d;
+  border-bottom-color: #404040;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.toolbar-group:last-child {
+  border-right: none;
+}
+
+.toolbar-button {
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-button:hover {
+  background: #e8e8e8;
+  border-color: #ccc;
+}
+
+.toolbar-button:active {
+  transform: scale(0.95);
+}
+
+.toolbar-button.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.toolbar-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Color Picker */
+.color-picker {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+  border-color: #333;
+}
+
+.color-swatch.selected {
+  border-color: #000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Page Navigation */
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.page-input {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-display {
+  min-width: 60px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Loading Overlay */
+.pdf-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.pdf-loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Search Highlight */
+.search-highlight {
+  background-color: rgba(255, 235, 59, 0.5);
+  animation: fadeIn 0.3s;
+}
+
+.search-highlight.active {
+  background-color: rgba(255, 152, 0, 0.7);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Sidebar */
+.pdf-sidebar {
+  width: 300px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-sidebar.dark-mode {
+  background: #2d2d2d;
+  border-left-color: #404040;
+}
+
+/* Thumbnail View */
+.thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+.thumbnail-item {
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.2s;
+  background: white;
+}
+
+.thumbnail-item:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail-item.active {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.thumbnail-canvas {
+  width: 100%;
+  height: auto;
+}
+
+.thumbnail-label {
+  padding: 4px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  background: #f5f5f5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pdf-toolbar {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .toolbar-group {
+    padding: 0 8px;
+  }
+
+  .toolbar-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .pdf-sidebar {
+    width: 100%;
+    height: 40%;
+    border-left: none;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .thumbnail-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+}
+
+/* Scrollbar Styling */
+.pdf-canvas-wrapper::-webkit-scrollbar,
+.pdf-sidebar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.pdf-canvas-wrapper::-webkit-scrollbar-track,
+.pdf-sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.pdf-canvas-wrapper::-webkit-scrollbar-thumb,
+.pdf-sidebar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+.pdf-canvas-wrapper::-webkit-scrollbar-thumb:hover,
+.pdf-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Print Styles */
+@media print {
+  .pdf-toolbar,
+  .pdf-sidebar,
+  .highlight-layer,
+  .annotation-layer {
+    display: none !important;
+  }
+
+  .pdf-canvas-wrapper {
+    background: white;
+    padding: 0;
+  }
+}
+
+/* Accessibility */
+.pdf-viewer-container:focus-within .highlight {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .toolbar-button {
+    padding: 12px 16px;
+  }
+
+  .highlight {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .annotation-marker {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .pdf-toolbar {
+    border-bottom: 2px solid #000;
+  }
+
+  .toolbar-button {
+    border-width: 2px;
+  }
+
+  .highlight {
+    opacity: 0.6;
+    border: 1px solid #000;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
