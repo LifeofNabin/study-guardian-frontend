@@ -17,6 +17,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const userRole = localStorage.getItem('role');
 
   console.log('🔒 ProtectedRoute check:', { token: !!token, userRole, requiredRole });
+  
 
   if (!token) {
     console.log('❌ No token, redirecting to login');
