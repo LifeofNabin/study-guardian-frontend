@@ -504,3 +504,62 @@
     transition: none !important;
   }
 }
+/* ✅ FIX FOR REACT-PDF WHITE BACKGROUND ISSUE */
+
+/* Force white background for PDF */
+.react-pdf__Page {
+  background-color: white !important;
+  position: relative !important;
+}
+
+.react-pdf__Page__canvas {
+  background-color: white !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+.react-pdf__Document {
+  background-color: white !important;
+  position: relative !important;
+  z-index: 1;
+}
+
+/* Fix for text layer positioning */
+.react-pdf__Page__textContent {
+  opacity: 0.2;
+}
+
+.react-pdf__Page__textContent span {
+  color: transparent !important;
+}
+
+/* Fix for annotation layer */
+.react-pdf__Page__annotations {
+  display: none; /* Hide annotations if not needed */
+}
+
+/* Ensure PDF is visible on dark backgrounds */
+.bg-slate-900 .react-pdf__Page {
+  background-color: white !important;
+}
+
+/* Override any dark mode styles */
+.dark .react-pdf__Page,
+.dark-mode .react-pdf__Page {
+  background-color: white !important;
+  filter: none !important;
+}
+
+/* Make sure PDF container has proper background */
+.bg-slate-900 {
+  background-color: #0f172a !important; /* Keep your dark theme */
+}
+
+/* PDF page wrapper */
+.pdf-page-wrapper {
+  background-color: white !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}

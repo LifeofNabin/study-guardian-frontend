@@ -1,5 +1,5 @@
 // FILE: frontend/src/services/api.js
-// ✅ COMPLETE FIX: Works with express-fileupload for both teacher & student uploads
+// ✅ OPTIMIZED: Cleaner logging, better error filtering, enhanced token refresh
 
 import axios from 'axios';
 
@@ -7,17 +7,56 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001/api',
   withCredentials: true,
-  // ✅ REMOVED: Don't set default Content-Type - let each request decide
 });
 
-// --- Interceptors for Logging and Token Refresh ---
+// Track if we're currently refreshing to prevent multiple refresh attempts
+let isRefreshing = false;
+let failedQueue = [];
 
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Helper to check if error should be logged
+const shouldLogError = (error) => {
+  const url = error.config?.url || '';
+  const status = error.response?.status;
+  
+  // Don't log expected 404s for session checks
+  if (status === 404 && url.includes('/sessions/active/current')) {
+    return false;
+  }
+  
+  // Don't log expected 400s for session end (already ended)
+  if (status === 400 && url.includes('/sessions/') && url.includes('/end')) {
+    return false;
+  }
+  
+  return true;
+};
+
+// --- Request Interceptor ---
 api.interceptors.request.use(
   (config) => {
-    console.log('📤 API Request:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-    });
+    // Only log non-polling requests in development
+    const isPolling = config.url?.includes('/active/current') || 
+                     config.url?.includes('/metrics') ||
+                     config.url?.includes('/live');
+    
+    if (process.env.NODE_ENV === 'development' && !isPolling) {
+      console.log('📤 API Request:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+      });
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -30,39 +69,106 @@ api.interceptors.request.use(
   }
 );
 
+// --- Response Interceptor ---
 api.interceptors.response.use(
   (response) => {
-    console.log('📥 API Response:', {
-      method: response.config.method?.toUpperCase(),
-      url: response.config.url,
-      status: response.status,
-    });
+    // Only log non-polling responses in development
+    const isPolling = response.config.url?.includes('/active/current') || 
+                     response.config.url?.includes('/metrics') ||
+                     response.config.url?.includes('/live');
+    
+    if (process.env.NODE_ENV === 'development' && !isPolling) {
+      console.log('📥 API Response:', {
+        method: response.config.method?.toUpperCase(),
+        url: response.config.url,
+        status: response.status,
+      });
+    }
     return response;
   },
   async (error) => {
-    console.log('📥 API Error Response:', {
-      url: error.config?.url,
-      status: error.response?.status,
-    });
-
     const originalRequest = error.config;
+
+    // Log only significant errors
+    if (shouldLogError(error)) {
+      console.log('📥 API Error Response:', {
+        url: error.config?.url,
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      });
+    }
+
+    // Handle 401 Unauthorized - Token refresh logic
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch(err => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (!refreshToken) {
+        // No refresh token available, redirect to login
+        isRefreshing = false;
+        processQueue(error, null);
+        localStorage.clear();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/refresh`, { refreshToken });
-          const { accessToken } = response.data;
-          localStorage.setItem('token', accessToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
+        const response = await axios.post(
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/auth/refresh`,
+          { refreshToken },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        const { accessToken } = response.data;
+        
+        if (!accessToken) {
+          throw new Error('No access token received');
         }
+
+        // Update token in localStorage
+        localStorage.setItem('token', accessToken);
+        
+        // Update authorization header for the original request
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        
+        // Process queued requests
+        processQueue(null, accessToken);
+        isRefreshing = false;
+
+        console.log('✅ Token refreshed successfully');
+        
+        // Retry the original request
+        return api(originalRequest);
       } catch (refreshError) {
+        // Refresh failed - clear tokens and redirect to login
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
+        console.error('❌ Token refresh failed:', refreshError.message);
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        
+        // Redirect to login
         window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
+
+    // For all other errors, just reject
     return Promise.reject(error);
   }
 );
@@ -99,7 +205,7 @@ export const roomsAPI = {
     headers: { 'Content-Type': 'application/json' } 
   }),
   
-  // ✅ FIXED: No Content-Type header - browser adds it with boundary
+  // ✅ No Content-Type header - browser adds it with boundary
   uploadPDF: (roomId, formData) => api.post(`/rooms/${roomId}/pdf/upload`, formData),
   
   addStudent: (roomId, email) => api.post(`/rooms/${roomId}/add-student`, { studentEmail: email }, { 
@@ -124,7 +230,7 @@ export const routinesAPI = {
   }),
   delete: (id) => api.delete(`/routines/${id}`),
   
-  // ✅ FIXED: All upload endpoints - no Content-Type header
+  // ✅ All upload endpoints - no Content-Type header
   uploadPDF: (routineId, formData) => api.post(`/routines/${routineId}/upload`, formData),
   uploadPDFs: (formData) => api.post('/routines/upload-pdfs', formData),
   uploadSubjectPDF: (routineId, formData) => api.post(`/routines/${routineId}/upload-subject-pdf`, formData),

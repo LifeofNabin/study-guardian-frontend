@@ -1,464 +1,223 @@
-/**
- * FILE PATH: frontend/src/components/student/WebcamMonitor.css
- * 
- * Styles for WebcamMonitor component
- */
+/* Add to WebcamMonitor.css */
 
-.webcam-monitor {
-  position: relative;
-  width: 100%;
-  max-width: 640px;
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.webcam-monitor.fullscreen {
-  max-width: 100%;
-  height: 100vh;
-  border-radius: 0;
-}
-
-/* Video Container */
-.video-container {
-  position: relative;
-  width: 100%;
-  padding-top: 75%; /* 4:3 aspect ratio */
-  background: #000;
-}
-
-.webcam-monitor.fullscreen .video-container {
-  padding-top: 0;
-  height: 100vh;
-}
-
-/* Video Element */
-.webcam-video {
+/* Study Analytics Panel */
+.study-analytics-panel {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Canvas Overlay */
-.webcam-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Loading Overlay */
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 10;
-  color: #fff;
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  animation: spin 1s linear infinite;
-  color: #3b82f6;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-overlay p {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.progress-bar {
-  width: 200px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  transition: width 0.3s ease;
-}
-
-/* Error Overlay */
-.error-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(220, 38, 38, 0.95);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 10;
-  color: #fff;
-  padding: 20px;
-  text-align: center;
-}
-
-.error-icon {
-  width: 64px;
-  height: 64px;
-  color: #fff;
-}
-
-.error-message {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  max-width: 400px;
-}
-
-/* Status Indicators */
-.status-indicators {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 5;
-}
-
-.indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.indicator.success {
-  background: rgba(16, 185, 129, 0.9);
-  color: #fff;
-}
-
-.indicator.warning {
-  background: rgba(245, 158, 11, 0.9);
-  color: #fff;
-}
-
-.indicator.danger {
-  background: rgba(239, 68, 68, 0.9);
-  color: #fff;
-}
-
-.indicator.processing {
-  background: rgba(59, 130, 246, 0.9);
-  color: #fff;
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #fff;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.2); }
-}
-
-/* Controls */
-.webcam-controls {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  z-index: 5;
-}
-
-.control-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.control-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-}
-
-.control-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.control-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.control-btn.primary {
-  background: rgba(16, 185, 129, 0.9);
-}
-
-.control-btn.primary:hover:not(:disabled) {
-  background: rgba(16, 185, 129, 1);
-}
-
-.control-btn.danger {
-  background: rgba(239, 68, 68, 0.9);
-}
-
-.control-btn.danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 1);
-}
-
-.control-btn.active {
-  background: rgba(59, 130, 246, 0.9);
-}
-
-.control-btn.active:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 1);
-}
-
-/* Settings Panel */
-.settings-panel {
-  position: absolute;
-  bottom: 80px;
-  right: 16px;
-  width: 280px;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  color: #fff;
-  z-index: 6;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 280px;
+  z-index: 40;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-.settings-panel h4 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #94a3b8;
-}
-
-.settings-list {
+.analytics-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.settings-list label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
+/* Presence Card */
+.presence-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 2px solid;
+  transition: all 0.3s ease;
 }
 
-.settings-list label:hover {
-  background: rgba(255, 255, 255, 0.1);
+.presence-card.focused {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
 }
 
-.settings-list input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #3b82f6;
+.presence-card.present {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.1);
 }
 
-.settings-list span {
-  font-size: 14px;
-  flex: 1;
+.presence-card.distracted {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
 }
 
-.camera-selection {
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+.presence-card.absent {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+  animation: pulse-alert 2s infinite;
 }
 
-.camera-selection select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
+@keyframes pulse-alert {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-.camera-selection select:focus {
-  outline: none;
-  border-color: #3b82f6;
+.presence-card.camera_off {
+  border-color: rgba(107, 114, 128, 0.4);
+  background: rgba(107, 114, 128, 0.1);
 }
 
-.camera-selection option {
-  background: #1e293b;
-  color: #fff;
+.presence-icon {
+  margin-bottom: 8px;
 }
 
-/* Info Footer */
-.info-footer {
-  display: flex;
-  justify-content: space-around;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
-}
-
-.info-item {
+.presence-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 4px;
 }
 
-.info-label {
+.presence-label {
   font-size: 11px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.info-value {
+.presence-value {
   font-size: 16px;
-  font-weight: 700;
-  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
-/* Button Styles */
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
+.absence-timer {
+  font-size: 10px;
+  color: rgba(239, 68, 68, 0.8);
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  margin-top: 4px;
 }
 
-.btn-primary {
-  background: #3b82f6;
-  color: #fff;
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.btn-primary:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+.metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 }
 
-/* Responsive */
-/* Responsive */
-@media (max-width: 768px) {
-  .webcam-monitor {
-    max-width: 100%;
-    border-radius: 0;
-  }
-
-  .webcam-controls {
-    bottom: 12px;
-    gap: 6px;
-  }
-
-  .control-btn {
-    width: 40px;
-    height: 40px;
-  }
-
-  .settings-panel {
-    width: 220px;
-    padding: 12px;
-    bottom: 70px;
-    right: 12px;
-  }
-
-  .info-footer {
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px 12px;
-  }
-
-  .info-label {
-    font-size: 10px;
-  }
-
-  .info-value {
-    font-size: 14px;
-  }
-
-  .camera-selection select {
-    font-size: 13px;
-  }
+.metric-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
-@media (max-width: 480px) {
-  .webcam-monitor {
-    height: auto;
-  }
+.metric-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  margin: 4px 0;
+}
 
-  .video-container {
-    padding-top: 56.25%; /* 16:9 aspect ratio for small screens */
-  }
+.metric-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
-  .settings-panel {
-    width: 180px;
-    padding: 10px;
-    bottom: 60px;
-    right: 8px;
-  }
+/* Blink Monitor */
+.blink-monitor {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
 
-  .control-btn {
-    width: 36px;
-    height: 36px;
-  }
+.blink-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
 
-  .btn {
-    padding: 8px 16px;
-    font-size: 12px;
-  }
+.blink-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.blink-rate {
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+}
+
+.blink-unit {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.blink-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.blink-status.normal {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.blink-status.warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+/* Break Recommendation */
+.break-recommendation {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  animation: pulse 2s infinite;
+}
+
+.break-text {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Session Time */
+.session-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.time-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
 }

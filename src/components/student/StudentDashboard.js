@@ -1,7 +1,7 @@
 // FILE PATH: frontend/src/components/student/StudentDashboard.js
-// ✅ COMPLETE VERSION: Teacher names + PDF status badges + All previous fixes
+// ✅ PART 1: Complete with double session end fix
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, Plus, Calendar, Clock, Users, TrendingUp,
@@ -35,6 +35,9 @@ const StudentDashboard = () => {
   const [filterSubject, setFilterSubject] = useState('all');
   const [expandedRoutine, setExpandedRoutine] = useState(null);
   const [uploadingPDF, setUploadingPDF] = useState({});
+  
+  // ✅ NEW: Add ref to prevent double session ending
+  const endingSessionRef = useRef(null);
   
   const [stats, setStats] = useState({
     totalHours: 0,
@@ -149,19 +152,43 @@ const StudentDashboard = () => {
     }
   };
 
+  // ✅ FIXED: Prevent double session ending
   const handleDiscardSession = async () => {
-    const sessionId = resumableSession?.session?._id; 
-    if (sessionId) {
-      try {
-        console.log('🗑️ Attempting to end session:', sessionId);
-        await sessionsAPI.endSession(sessionId);
-        console.log('✅ Old session discarded successfully');
-      } catch (error) {
-        console.error('❌ Error ending old session:', error);
-        console.log('📥 Error response:', error.response?.data);
-      }
+    const sessionId = resumableSession?.session?._id;
+    
+    if (!sessionId) {
+      setResumableSession(null);
+      return;
     }
-    setResumableSession(null);
+
+    // ✅ Prevent double-ending
+    if (endingSessionRef.current === sessionId) {
+      console.log('⏳ Already ending session:', sessionId);
+      return;
+    }
+
+    try {
+      endingSessionRef.current = sessionId;
+      console.log('🗑️ Attempting to end session:', sessionId);
+      
+      await sessionsAPI.endSession(sessionId);
+      console.log('✅ Old session discarded successfully');
+      
+    } catch (error) {
+      // ✅ Ignore "already ended" errors
+      if (error.response?.status === 400 && 
+          error.response?.data?.message?.includes('already ended')) {
+        console.log('ℹ️ Session was already ended, continuing...');
+      } else {
+        console.error('❌ Error ending old session:', error);
+        if (error.response) {
+          console.log('📥 Error response:', error.response.data);
+        }
+      }
+    } finally {
+      setResumableSession(null);
+      endingSessionRef.current = null;
+    }
   };
 
   const fetchRooms = async () => {
@@ -323,7 +350,7 @@ const StudentDashboard = () => {
         document_id: room._id, 
         document_path: documentPath
       };
-      // This is the correct line that will fix the error
+      
       const response = await sessionsAPI.startSession(sessionData);
 
       if (!response.data.success) throw new Error(response.data.message || 'Failed to create session');
@@ -341,7 +368,6 @@ const StudentDashboard = () => {
       alert(`Failed to start session: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     }
   };
-
   const handleStartSelfStudy = async (routine, subjectOrData) => {
     const subjectName = typeof subjectOrData === 'string' 
       ? subjectOrData 
@@ -388,7 +414,6 @@ const StudentDashboard = () => {
         document_path: documentPath 
       };
       
-      // CORRECT
       const response = await sessionsAPI.startSession(sessionData); 
       
       if (!response.data.success) {
@@ -468,19 +493,7 @@ const StudentDashboard = () => {
   }
 
   if (activeSession) {
-    return (
-      <div className="min-h-screen bg-gray-900">
-        <div className="flex h-screen">
-          <div className="flex-1">
-            <StudentPDFViewer session={activeSession} onEndSession={handleEndSession} />
-          </div>
-          <div className="w-96 bg-gray-800 p-4 space-y-4 overflow-y-auto">
-            <WebcamMonitor session={activeSession} sessionId={activeSession.session._id} onMetricsUpdate={handleMetricsUpdate} />
-            <MetricsPanel sessionId={activeSession.session._id} metrics={currentMetrics} />
-          </div>
-        </div>
-      </div>
-    );
+    return <StudentPDFViewer session={activeSession} onEndSession={handleEndSession} />;
   }
 
   if (showStudyPlan) {
@@ -646,7 +659,7 @@ const StudentDashboard = () => {
           </button>
         </div>
 
-        {/* ✅ FIXED: My Classrooms with Teacher Names + PDF Status */}
+        {/* My Classrooms */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -666,7 +679,6 @@ const StudentDashboard = () => {
                       </span>
                     </div>
                     
-                    {/* ✅ FIXED: Teacher Name Display */}
                     <p className="text-sm text-gray-600 mt-2 flex items-center">
                       <Users className="h-4 w-4 mr-1.5 text-gray-500" />
                       Teacher: {
@@ -678,7 +690,6 @@ const StudentDashboard = () => {
                       }
                     </p>
                     
-                    {/* ✅ PDF Status Badge */}
                     <div className="mt-3 flex items-center">
                       {room.pdf_path || room.has_pdf ? (
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center">
@@ -712,7 +723,7 @@ const StudentDashboard = () => {
           )}
         </div>
 
-        {/* ✅ FIXED: My Study Routines with PDF Status Badges */}
+        {/* My Study Routines */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -725,8 +736,6 @@ const StudentDashboard = () => {
             <div className="space-y-4">
               {routines.map(routine => {
                 const isExpanded = expandedRoutine === routine._id;
-                
-                // ✅ Calculate PDF status
                 const totalSubjects = routine.subjects?.length || 0;
                 const subjectsWithPDF = routine.subjects?.filter(s => 
                   s.pdf_path || s.has_pdf || (s.pdfs && s.pdfs.length > 0)
@@ -735,17 +744,12 @@ const StudentDashboard = () => {
                 
                 return (
                   <div key={routine._id} className="bg-gray-50 rounded-xl border hover:shadow-md transition-shadow">
-                    {/* Routine Header */}
-                    <div 
-                      className="p-5 cursor-pointer"
-                      onClick={() => toggleRoutine(routine._id)}
-                    >
+                    <div className="p-5 cursor-pointer" onClick={() => toggleRoutine(routine._id)}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
                             <h3 className="text-lg font-bold text-gray-800">{routine.title}</h3>
                             
-                            {/* ✅ PDF Status Badge */}
                             {totalSubjects > 0 && (
                               <span className={`text-xs font-semibold px-2 py-1 rounded-full flex items-center ${
                                 allPDFsUploaded 
@@ -793,7 +797,6 @@ const StudentDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Expanded Subjects View */}
                     {isExpanded && routine.subjects && routine.subjects.length > 0 && (
                       <div className="px-5 pb-5 space-y-3 border-t border-gray-200 pt-4">
                         {routine.subjects.map((subject, idx) => {
@@ -807,7 +810,6 @@ const StudentDashboard = () => {
                                 <div className="flex items-center space-x-3 flex-1">
                                   <h4 className="font-semibold text-gray-800">{subject.name}</h4>
                                   
-                                  {/* ✅ Subject PDF Status Badge */}
                                   {hasPDF ? (
                                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center">
                                       <Check className="h-3 w-3 mr-1" />
@@ -827,7 +829,6 @@ const StudentDashboard = () => {
                               </div>
                               
                               <div className="flex items-center space-x-2">
-                                {/* PDF Upload */}
                                 <label className="flex-1 cursor-pointer">
                                   <input
                                     type="file"
@@ -863,7 +864,6 @@ const StudentDashboard = () => {
                                   </div>
                                 </label>
                                 
-                                {/* Start Session Button */}
                                 <button
                                   onClick={() => handleStartSelfStudy(routine, subject)}
                                   disabled={!hasPDF}

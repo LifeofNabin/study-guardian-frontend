@@ -10,6 +10,8 @@ import TeacherDashboard from './components/teacher/TeacherDashboard';
 
 // Student components
 import StudentDashboard from './components/student/StudentDashboard';
+import AnalyticsDashboard from './components/student/AnalyticsDashboard'; // Add this import
+import StudySession from './components/student/StudySession'; // If you have this
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -18,7 +20,6 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   console.log('🔒 ProtectedRoute check:', { token: !!token, userRole, requiredRole });
   
-
   if (!token) {
     console.log('❌ No token, redirecting to login');
     return <Navigate to="/login" replace />;
@@ -43,11 +44,11 @@ const App = () => {
           element={<Navigate to="/login" replace />}
         />
 
-        {/* Public routes - NO PublicRoute wrapper */}
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected routes */}
+        {/* Teacher routes */}
         <Route
           path="/teacher"
           element={
@@ -57,11 +58,32 @@ const App = () => {
           }
         />
 
+        {/* Student routes */}
         <Route
           path="/student"
           element={
             <ProtectedRoute requiredRole="student">
               <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Analytics route */}
+        <Route
+          path="/student/analytics"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <AnalyticsDashboard />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Study session route */}
+        <Route
+          path="/student/session/:roomId?/:routineId?"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudySession />
             </ProtectedRoute>
           }
         />

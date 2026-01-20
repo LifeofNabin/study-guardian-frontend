@@ -1,16 +1,11 @@
-/**
- * FILE PATH: frontend/src/components/student/StudySession.js
- * ✅ OPTIMIZED: PDF takes full width, floating metrics panel with hide/show
- */
+// FILE: frontend/src/components/student/StudySession.js
+// ✅ FIXED VERSION: With better session lifecycle management
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StudentPDFViewer from './StudentPDFViewer';
-import WebcamMonitor from './WebcamMonitor';
-import MetricsPanel from './MetricsPanel';
 import { sessionsAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 
 const StudySession = ({ 
   documentId, 
@@ -23,242 +18,285 @@ const StudySession = ({
   const [activeSession, setActiveSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isWebcamActive, setIsWebcamActive] = useState(false);
-  const [metrics, setMetrics] = useState({});
+  const [sessionEnded, setSessionEnded] = useState(false);
+  
+  // Use refs to track state without triggering re-renders
+  const sessionInitializedRef = useRef(false);
+  const cleanupCalledRef = useRef(false);
+  const componentMountedRef = useRef(true);
 
-  // ✅ NEW: Panel visibility states
-  const [showPanel, setShowPanel] = useState(true);
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
-
-  const sessionId = activeSession?._id;
-  const documentPath = activeSession?.document_path; 
-  const sessionStartTime = useMemo(() => activeSession ? new Date(activeSession.start_time).getTime() : Date.now(), [activeSession]);
-
-  // Session Initialization
+  // Single session initialization effect
   useEffect(() => {
-    if (!user || !documentId) {
-      setError('User or document not defined.');
+    // Set mounted flag
+    componentMountedRef.current = true;
+    
+    return () => {
+      componentMountedRef.current = false;
+    };
+  }, []);
+
+  // Session Initialization - ONE TIME ONLY
+  useEffect(() => {
+    // Early returns
+    if (sessionInitializedRef.current) {
+      console.log('🔷 Session already initialized, skipping');
+      return;
+    }
+    
+    if (sessionEnded) {
+      console.log('🔷 Session already ended, skipping initialization');
+      return;
+    }
+    
+    if (!componentMountedRef.current) {
+      console.log('🔷 Component not mounted, skipping');
+      return;
+    }
+
+    console.log('🔷 StudySession: Starting initialization...');
+    
+    if (!user) {
+      setError('User not authenticated. Please log in.');
+      setLoading(false);
+      return;
+    }
+    
+    if (!documentId) {
+      setError('No document provided.');
       setLoading(false);
       return;
     }
 
     const startSession = async () => {
       try {
-        setLoading(true);
+        console.log('🔷 Starting session for document:', documentId, 'user:', user._id);
+        
         const response = await sessionsAPI.startSession({
           document_id: documentId,
-          room_id: room?._id,
+          room_id: room?._id || null,
           student_id: user._id,
         });
         
-        setActiveSession(response.session);
-        setLoading(false);
+        if (response && response.session) {
+          console.log('✅ Session created:', response.session._id);
+          
+          if (componentMountedRef.current) {
+            sessionInitializedRef.current = true;
+            setActiveSession(response.session);
+            setError(null);
+          }
+        } else {
+          throw new Error('Invalid response from server');
+        }
+        
       } catch (err) {
-        console.error('Error starting session:', err);
-        setError('Failed to start study session.');
-        setLoading(false);
+        console.error('❌ Failed to start session:', err);
+        
+        if (componentMountedRef.current) {
+          setError(err.response?.data?.message || err.message || 'Failed to start session');
+        }
+      } finally {
+        if (componentMountedRef.current) {
+          setLoading(false);
+        }
       }
     };
 
     startSession();
-  }, [user, documentId, room]);
-
-  // Session Termination Handler
-  const handleEndSession = useCallback(async () => {
-    if (!sessionId) return;
     
-    if (!window.confirm('Are you sure you want to end your study session?')) return;
+  }, [user, documentId, room, sessionEnded]);
+
+  // Session Termination Handler - FIXED
+  const handleEndSession = useCallback(async (sessionData = null) => {
+    console.log('🔷 handleEndSession called');
+    
+    if (!componentMountedRef.current) {
+      console.log('🔷 Component not mounted, skipping');
+      return;
+    }
+    
+    if (cleanupCalledRef.current) {
+      console.log('🔷 Cleanup already called');
+      return;
+    }
+    
+    cleanupCalledRef.current = true;
+    
+    const sessionToEnd = sessionData || activeSession;
+    
+    if (!sessionToEnd?._id) {
+      console.warn('⚠️ No session ID to end');
+      
+      if (componentMountedRef.current) {
+        setSessionEnded(true);
+        setTimeout(() => navigate('/student/dashboard'), 500);
+      }
+      return;
+    }
 
     try {
-      const response = await sessionsAPI.endSession(sessionId);
-
-      if (onSessionComplete) {
-        onSessionComplete(response.session);
+      console.log('🔷 Ending session:', sessionToEnd._id);
+      
+      // Mark as ended first
+      if (componentMountedRef.current) {
+        setSessionEnded(true);
       }
-
-      navigate(`/student/analytics/session/${sessionId}`);
+      
+      // Call API
+      await sessionsAPI.endSession(sessionToEnd._id);
+      console.log('✅ Session ended successfully');
+      
+      // Call callback if provided
+      if (onSessionComplete && componentMountedRef.current) {
+        onSessionComplete(sessionToEnd);
+      }
+      
+      // Navigate after a brief delay
+      if (componentMountedRef.current) {
+        setTimeout(() => {
+          if (componentMountedRef.current) {
+            navigate('/student/dashboard');
+          }
+        }, 1000);
+      }
+      
     } catch (err) {
-      console.error('Error ending session:', err);
-      alert('Failed to end session. Please try again.');
+      console.error('❌ Error ending session:', err);
+      
+      // Still navigate even if ending fails
+      if (componentMountedRef.current) {
+        setTimeout(() => navigate('/student/dashboard'), 1000);
+      }
     }
-  }, [sessionId, navigate, onSessionComplete]);
+  }, [activeSession, navigate, onSessionComplete]);
 
-  // Handle metrics updates from WebcamMonitor
-  const handleMetricsUpdate = useCallback((newMetrics) => {
-    setMetrics(newMetrics);
-  }, []);
+  // Cleanup on unmount - SIMPLIFIED
+  useEffect(() => {
+    return () => {
+      console.log('🔷 StudySession unmounting');
+      
+      // Only try to end session if not already ended
+      if (!cleanupCalledRef.current && activeSession?._id && componentMountedRef.current) {
+        console.log('🔷 Auto-ending session on unmount');
+        
+        // Use timeout to avoid race conditions
+        setTimeout(() => {
+          if (activeSession?._id) {
+            sessionsAPI.endSession(activeSession._id).catch(err => {
+              console.error('❌ Auto-end failed:', err);
+            });
+          }
+        }, 100);
+      }
+    };
+  }, [activeSession]);
 
-  if (loading) {
+  // ============================================
+  // RENDER STATES
+  // ============================================
+
+  // Loading State
+  if (loading && !error && !activeSession) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex justify-center items-center">
+      <div className="min-h-screen bg-slate-950 flex justify-center items-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="mt-4 text-gray-400">Starting session and loading document...</p>
+          <div className="animate-spin rounded-full h-24 w-24 border-[6px] border-slate-800 border-t-indigo-600 mx-auto mb-6"></div>
+          <p className="text-indigo-400 text-xl font-bold mb-2">Starting Study Session</p>
+          <p className="text-slate-500">Loading document and initializing AI monitoring...</p>
+          <div className="mt-8 flex justify-center space-x-2">
+            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse delay-150"></div>
+            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse delay-300"></div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error || !documentPath || !sessionId) {
+  // Error State
+  if (error || (!loading && !activeSession)) {
     return (
-      <div className="min-h-screen bg-gray-900 text-red-400 flex justify-center items-center">
-        <div className="text-center">
-          <p className="text-xl mb-4">Error: {error || 'Invalid session data or document path.'}</p>
+      <div className="min-h-screen bg-slate-950 flex justify-center items-center p-6">
+        <div className="text-center max-w-md bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-3xl p-10">
+          <div className="text-rose-500 text-6xl mb-6">⚠️</div>
+          <h2 className="text-2xl text-white mb-3 font-bold">Session Error</h2>
+          <p className="text-slate-400 mb-8 leading-relaxed">
+            {error || 'Failed to start study session. Please try again.'}
+          </p>
+          <div className="space-y-4">
+            <button 
+              onClick={() => navigate('/student/dashboard')}
+              className="w-full px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-lg font-bold transition-all hover:scale-[1.02] active:scale-95"
+            >
+              Back to Dashboard
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full px-8 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-medium transition-all"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if session has necessary data
+  if (activeSession && !activeSession.document_path) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex justify-center items-center">
+        <div className="text-center max-w-md">
+          <div className="text-yellow-500 text-5xl mb-4">📄</div>
+          <h2 className="text-xl text-white mb-2">Document Not Found</h2>
+          <p className="text-slate-400 mb-6">The document path is not available for this session.</p>
           <button 
-            onClick={() => navigate('/student/dashboard')}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-900 flex flex-col relative">
-      {/* Top bar */}
-      <div className="flex justify-between items-center bg-gray-800 text-white p-3 shadow-md z-10">
-        <h2 className="text-lg font-semibold">
-          {room ? `${room.title} - Guided Study` : 'Self Study Session'}
-        </h2>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setShowPanel(!showPanel)}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2"
-          >
-            {showPanel ? (
-              <>
-                <ChevronRight className="h-4 w-4" />
-                Hide Metrics
-              </>
-            ) : (
-              <>
-                <ChevronLeft className="h-4 w-4" />
-                Show Metrics
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleEndSession}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            onClick={() => handleEndSession()}
+            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
           >
             End Session
           </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Main content - PDF takes full width */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* PDF Viewer - Full Width */}
-        <div className="absolute inset-0 overflow-auto">
-          <StudentPDFViewer 
-            sessionId={sessionId} 
-            documentPath={documentPath} 
-          />
+  // Prepare session object for StudentPDFViewer
+  const sessionForViewer = activeSession ? {
+    sessionId: activeSession._id,
+    documentPath: activeSession.document_path,
+    student_id: activeSession.student_id || user._id,
+    userId: user._id,
+    type: room ? 'room' : 'self-study',
+    room: room,
+    startTime: activeSession.start_time,
+    // Add any other required fields from activeSession
+    ...activeSession
+  } : null;
+
+  // Final check before rendering
+  if (!sessionForViewer || !sessionForViewer.sessionId) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex justify-center items-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-700 border-t-indigo-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Finalizing session setup...</p>
         </div>
-
-        {/* ✅ Floating Metrics Panel - Right Side */}
-        {showPanel && (
-          <div 
-            className={`absolute top-4 right-4 bottom-4 bg-gradient-to-b from-gray-900 to-gray-950 rounded-2xl shadow-2xl border-2 border-purple-500/30 transition-all duration-300 z-20 ${
-              isPanelExpanded ? 'w-[500px]' : 'w-[360px]'
-            }`}
-            style={{
-              maxHeight: 'calc(100vh - 120px)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            {/* Panel Header */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white p-3 rounded-t-2xl flex items-center justify-between shadow-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <h3 className="font-bold text-sm">Live Monitoring</h3>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setIsPanelExpanded(!isPanelExpanded)}
-                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                  title={isPanelExpanded ? "Compact View" : "Expanded View"}
-                >
-                  {isPanelExpanded ? (
-                    <Minimize2 className="h-4 w-4" />
-                  ) : (
-                    <Maximize2 className="h-4 w-4" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setShowPanel(false)}
-                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                  title="Hide Panel"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Panel Content */}
-            <div className="flex flex-col h-[calc(100%-48px)] overflow-hidden">
-              {/* ✅ Webcam Monitor - Compact & Minimal */}
-              <div className="p-2 border-b border-purple-500/20 bg-gray-900/50">
-                <div className="relative rounded-xl overflow-hidden" style={{ maxHeight: '200px' }}>
-                  <WebcamMonitor 
-                    sessionId={sessionId} 
-                    className="w-full"
-                    showControls={false}
-                    autoStart={true}
-                    onMetricsUpdate={handleMetricsUpdate}
-                    onProcessingChange={setIsWebcamActive}
-                  />
-                </div>
-              </div>
-
-              {/* ✅ Metrics Panel - Optimized Scrollable */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
-                <MetricsPanel 
-                  sessionId={sessionId}
-                  startTime={sessionStartTime}
-                  isWebcamActive={isWebcamActive}
-                  metrics={metrics}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ Minimal Show Panel Button (when hidden) - Fixed position */}
-        {!showPanel && (
-          <button
-            onClick={() => setShowPanel(true)}
-            className="fixed top-24 right-0 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-l-lg shadow-lg transition-all z-20 flex items-center gap-1 group"
-            title="Show Metrics Panel"
-            style={{ writingMode: 'vertical-rl' }}
-          >
-            <ChevronLeft className="h-4 w-4 rotate-90 group-hover:translate-x-1 transition-transform" />
-            <span className="text-xs font-semibold tracking-wider">METRICS</span>
-          </button>
-        )}
       </div>
-      
-      {/* ✅ Custom Scrollbar Styles */}
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(139, 92, 246, 0.1);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(139, 92, 246, 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(139, 92, 246, 0.8);
-        }
-      `}</style>
+    );
+  }
+
+  console.log('🔷 Rendering PDF viewer for session:', sessionForViewer.sessionId);
+
+  return (
+    <div className="study-session-container" style={{ height: '100vh', overflow: 'hidden' }}>
+      <StudentPDFViewer 
+        key={`session-${sessionForViewer.sessionId}`} // Force re-render on new session
+        session={sessionForViewer}
+        onEndSession={handleEndSession}
+      />
     </div>
   );
 };
 
-export default StudySession;
+export default React.memo(StudySession);
